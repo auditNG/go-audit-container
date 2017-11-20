@@ -1,85 +1,58 @@
-package main
+package ContainerHelper
 
 import (
- "fmt"
- ps "github.com/mitchellh/go-ps"
- "os"
- "strconv"
+	"fmt"
+	ps "github.com/mitchellh/go-ps"
+	"os"
 )
 
-type PidCache struct {
-	lock        *sync.RWMutex
-	pidCache map[string]string
+type ContainerUtil struct {
+	pidCache PidCache
 }
 
-// Set stores the PID and the container Id in the map. If the container id is not available, it will be stored as "non-container".
-// If the process tree is killed by the time the container ID is fetched, it will be marked as "killed" as a hint to be purged.
-func (pc PidCache) Set(pid string, cid string) error {
-		pc.lock.Lock()
-		defer pc.lock.Unlock()
-		pc.pidCache[pid] = cid
-}
-
-// Get retrieves the cid, given the pid.
-func (pc PidCache) Get(pid string) (string, error) {
-	pc.lock.RLock()
-	cid, ok := pc.pidCache[pid]
-	pc.lock.RUnlock()
-	if ok {
-		return cid, nil
+// NewContainer instantiates a default password store
+func NewContainerUtil() ContainerUtil {
+	return ContainerUtil{
+		NewPidCache(),
 	}
 }
 
-func getContainerId(pid string) (string, error) {
+func (cu ContainerUtil) GetContainerId(pid int) (int, error) {
 
- pid, err := strconv.Atoi(os.Args[1])
+	cid, err := cu.pidCache.Get(pid)
 
- if err != nil {
-   fmt.Println("Bad process ID supplied")
-   return err
- }
+	if err == nil {
+		return cid, nil
+	}
 
- // at this stage the Processes related functions found in Golang's OS package
- // is no longer sufficient, we will use Mitchell Hashimoto's https://github.com/mitchellh/go-ps
- // package to find the application/executable/binary name behind the process ID.
+	p, err := ps.FindProcess(pid)
 
- p, err := ps.FindProcess(pid)
+	if err != nil || p == nil {
+		fmt.Println("Error, process not found")
+		return -1, err
+	}
 
- if err != nil {
-   fmt.Println("Error : ", err)
-   os.Exit(-1)
- }
+	not_init := true
+	for not_init {
 
- fmt.Println("Process ID : ", p.Pid())
- fmt.Println("Parent Process ID : ", p.PPid())
- fmt.Println("Process ID binary name : ", p.Executable())
+		if p.Executable() == "docker-containe" {
+			cid = p.Pid()
+			cu.pidCache.Set(pid, cid)
+			return cid, nil
+		}
 
- not_init := true
- container := false
- for not_init {
+		p, err = ps.FindProcess(p.PPid())
 
-   if (p.Executable() == "docker-containe") {
-     container = true
-     fmt.Println("The container ID is: ", p.Pid())
-     break
-   }
+		if err != nil {
+			fmt.Println("Error : ", err)
+			os.Exit(-1)
+		}
 
-   p, err = ps.FindProcess(p.PPid())
+		if 1 == p.Pid() {
+			not_init = false
+		}
+	}
 
-   if err != nil {
-     fmt.Println("Error : ", err)
-     os.Exit(-1)
-   }
-
-   if(1 == p.Pid()) {
-     not_init = false
-   }
-}
-
-if ( container == true ) {
- fmt.Println("This process runs in a container")
-} else {
- fmt.Println("This process does not run in a container")
-}
-
+	cu.pidCache.Set(pid, 0)
+	return 0, nil
 }
