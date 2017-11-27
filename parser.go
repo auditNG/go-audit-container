@@ -96,6 +96,7 @@ func (amg *AuditMessageGroup) AddMessage(am *AuditMessage) {
 	case 1300:
 		amg.findSyscall(am)
 		amg.mapUids(am)
+		amg.findContainerId(am)
 	default:
 		amg.mapUids(am)
 	}
@@ -193,12 +194,16 @@ func (amg *AuditMessageGroup) findContainerId(am *AuditMessage) {
 
 	pid, err := strconv.Atoi(pid_str)
 
+	l.Printf("PID string is: " + pid_str)
+	l.Printf("PID int is: %d\n", pid)
+
 	if nil != err {
 		return
 	}
 
   cu := ch.NewContainerUtil()
 	containerId, err := cu.GetContainerId(pid)
+	l.Printf("Container id is: %d\n", containerId)
 
 	if nil != err {
 		return
