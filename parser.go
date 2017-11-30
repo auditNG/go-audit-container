@@ -2,12 +2,12 @@ package main
 
 import (
 	"bytes"
+	ch "github.com/go-audit-container/container-helper"
 	"os/user"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
-	ch "github.com/go-audit-container/container-helper"
 )
 
 var uidMap = map[string]string{}
@@ -35,7 +35,7 @@ type AuditMessageGroup struct {
 	Msgs          []*AuditMessage   `json:"messages"`
 	UidMap        map[string]string `json:"uid_map"`
 	Syscall       string            `json:"-"`
-	containerId		int								`json:"container_id"`
+	ContainerId   int               `json:"container_id"`
 }
 
 // Creates a new message group from the details parsed from the message
@@ -47,6 +47,7 @@ func NewAuditMessageGroup(am *AuditMessage) *AuditMessageGroup {
 		CompleteAfter: time.Now().Add(COMPLETE_AFTER),
 		UidMap:        make(map[string]string, 2), // Usually only 2 individual uids per execve
 		Msgs:          make([]*AuditMessage, 0, 6),
+		ContainerId:   0,
 	}
 
 	amg.AddMessage(am)
@@ -98,6 +99,7 @@ func (amg *AuditMessageGroup) AddMessage(am *AuditMessage) {
 		amg.mapUids(am)
 		amg.findContainerId(am)
 	default:
+		amg.findContainerId(am)
 		amg.mapUids(am)
 	}
 }
@@ -167,7 +169,6 @@ func (amg *AuditMessageGroup) findSyscall(am *AuditMessage) {
 	amg.Syscall = data[start : start+end]
 }
 
-
 func (amg *AuditMessageGroup) findContainerId(am *AuditMessage) {
 	data := am.Data
 	start := 0
@@ -194,24 +195,19 @@ func (amg *AuditMessageGroup) findContainerId(am *AuditMessage) {
 
 	pid, err := strconv.Atoi(pid_str)
 
-	l.Printf("PID string is: " + pid_str)
-	l.Printf("PID int is: %d\n", pid)
+	if nil != err {
+		return
+	}
+
+	cu := ch.NewContainerUtil()
+	ContainerId, err := cu.GetContainerId(pid)
 
 	if nil != err {
 		return
 	}
 
-  cu := ch.NewContainerUtil()
-	containerId, err := cu.GetContainerId(pid)
-	l.Printf("Container id is: %d\n", containerId)
-
-	if nil != err {
-		return
-	}
-
-	amg.containerId = containerId;
+	amg.ContainerId = ContainerId
 }
-
 
 // Gets a username for a user id
 func getUsername(uid string) string {
