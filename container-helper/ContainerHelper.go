@@ -3,7 +3,6 @@ package ContainerHelper
 import (
 	"fmt"
 	ps "github.com/mitchellh/go-ps"
-	"os"
 )
 
 type ContainerUtil struct {
@@ -43,9 +42,10 @@ func (cu ContainerUtil) GetContainerId(pid int) (int, error) {
 
 		p, err = ps.FindProcess(p.PPid())
 
-		if err != nil {
+		if p == nil || err != nil {
 			fmt.Println("Error : ", err)
-			os.Exit(-1)
+        		return -1, nil
+
 		}
 
 		if 1 == p.Pid() {
