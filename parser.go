@@ -14,6 +14,7 @@ var uidMap = map[string]string{}
 var headerEndChar = []byte{")"[0]}
 var headerSepChar = byte(':')
 var spaceChar = byte(' ')
+var cu = ch.NewContainerUtil()
 
 const (
 	HEADER_MIN_LENGTH = 7               // Minimum length of an audit header
@@ -199,7 +200,6 @@ func (amg *AuditMessageGroup) findContainerId(am *AuditMessage) {
 		return
 	}
 
-	cu := ch.NewContainerUtil()
 	ContainerId, err := cu.GetContainerId(pid)
 
 	if nil != err {
