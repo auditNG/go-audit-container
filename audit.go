@@ -357,6 +357,12 @@ func main() {
 		filters,
 	)
 
+	//Initialize the container utils
+	err = cu.Init()
+	if nil != err {
+		el.Fatal(err)
+	}
+
 	l.Printf("Started processing events in the range [%d, %d]\n", config.GetInt("events.min"), config.GetInt("events.max"))
 
 	//Main loop. Get data from netlink and send it to the json lib for processing

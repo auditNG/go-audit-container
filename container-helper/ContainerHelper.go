@@ -16,6 +16,10 @@ func NewContainerUtil() ContainerUtil {
 	}
 }
 
+func (cu ContainerUtil) Init() error {
+	return cu.pidCache.Init()
+}
+
 func (cu ContainerUtil) GetContainerId(pid int) (int, error) {
 
 	cid, err := cu.pidCache.Get(pid)
