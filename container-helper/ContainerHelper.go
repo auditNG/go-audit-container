@@ -48,15 +48,15 @@ func (cu ContainerUtil) GetContainerId(pid int) (string, error) {
 			b, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cgroup", pid))
 			if err != nil || b == nil {
 				fmt.Println("Error, container uuid not found")
-				//at least record the cid by itself
-				scid = fmt.Sprintf("%d:", ncid)
+				//at least record the prociss id
+				scid = fmt.Sprintf("%d", ncid)
 			} else {
 				//parse uuid from file contents
 				re := regexp.MustCompile("^\\d+:memory:/docker/([0-9a-f]{64})")
 				rs := re.FindStringSubmatch(string(b))
 				if rs != nil {
 					uuid = rs[1]
-					scid = fmt.Sprintf("%d:%s", ncid, uuid)
+					scid = uuid
 				}
 			}
 			cu.pidCache.Set(pid, scid)
