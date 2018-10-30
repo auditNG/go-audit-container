@@ -1,0 +1,6 @@
+Package: goaudit
+Version: 0.1
+Maintainer: Kasm Technologies LLC
+Architecture: amd64
+Description: go audit container
+Depends: auditd

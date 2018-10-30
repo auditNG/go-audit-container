@@ -36,7 +36,7 @@ type AuditMessageGroup struct {
 	Msgs          []*AuditMessage   `json:"messages"`
 	UidMap        map[string]string `json:"uid_map"`
 	Syscall       string            `json:"-"`
-	ContainerId   int               `json:"container_id"`
+	ContainerId   string            `json:"container_id"`
 }
 
 // Creates a new message group from the details parsed from the message
@@ -48,7 +48,7 @@ func NewAuditMessageGroup(am *AuditMessage) *AuditMessageGroup {
 		CompleteAfter: time.Now().Add(COMPLETE_AFTER),
 		UidMap:        make(map[string]string, 2), // Usually only 2 individual uids per execve
 		Msgs:          make([]*AuditMessage, 0, 6),
-		ContainerId:   0,
+		ContainerId:   "0",
 	}
 
 	amg.AddMessage(am)
